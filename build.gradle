@@ -20,11 +20,15 @@ dependencies {
   testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
-shadowJar {
-  baseName = "modelview"
+test {
+  testLogging {
+    events 'passed'
+    exceptionFormat = 'full'
+  }
 }
 
 shadowJar {
+  baseName = "modelview"
   mergeServiceFiles()
   manifest {
     attributes \
