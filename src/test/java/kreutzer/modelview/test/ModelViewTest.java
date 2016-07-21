@@ -115,6 +115,36 @@ public final class ModelViewTest {
   }
 
   @Test
+  public final void testDoMatchSame() {
+    assertTrue("same views do not match", viewsDoMatch(PublicString.class, PublicString.class));
+  }
+
+  @Test
+  public final void testDoMatchSameAndOther() {
+    assertTrue("same views (and other) do not match", viewsDoMatch(PublicString.class, PublicString.class, PublicFloat.class));
+  }
+
+  @Test
+  public final void testDoMatchSameAndOtherDifferentOrder() {
+    assertTrue("same views (and other, different order) do not match", viewsDoMatch(PublicString.class, PublicFloat.class, PublicString.class));
+  }
+
+  @Test
+  public final void testDoMatchSubclass() {
+    assertTrue("subclass view does not match superclass view", viewsDoMatch(PublicString.class, AllFieldsSuperClass.class));
+  }
+
+  @Test
+  public final void testDoNotMatchOther() {
+    assertFalse("superclass view matches subclass view", viewsDoMatch(PublicString.class, PublicFloat.class));
+  }
+
+  @Test
+  public final void testDoNotMatchSuperclass() {
+    assertFalse("superclass view matches subclass view", viewsDoMatch(AllFieldsSuperClass.class, PublicString.class));
+  }
+
+  @Test
   public final void testAnnotatedFieldsAreDetectedCorrectlySuperClassAll() {
     final SuperClass objectToClone = new SuperClass();
     final List<Field> annotatedFields = findAnnotatedFields(objectToClone, AllFieldsSuperClass.class);
@@ -168,6 +198,30 @@ public final class ModelViewTest {
     final SuperClass objectToClone = new SuperClass("string", 13, 3.);
     final SuperClass clonedObject = filter(objectToClone, AllFieldsSuperClass.class);
     final SuperClass expected = objectToClone;
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testObjectIsClonedCorrectlyMultiple() {
+    final SuperClass objectToClone = new SuperClass("string", 13, 3.);
+    final SuperClass clonedObject = filter(objectToClone, PublicString.class, PrivateDouble.class);
+    final SuperClass expected = new SuperClass("string", 0, 3.);
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testObjectIsClonedCorrectlyMultipleAndOther() {
+    final SuperClass objectToClone = new SuperClass("string", 13, 3.);
+    final SuperClass clonedObject = filter(objectToClone, PublicString.class, PrivateDouble.class, PublicFloat.class);
+    final SuperClass expected = new SuperClass("string", 0, 3.);
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testObjectIsClonedCorrectlyNoMatches() {
+    final SuperClass objectToClone = new SuperClass("string", 13, 3.);
+    final SuperClass clonedObject = filter(objectToClone, PublicFloat.class);
+    final SuperClass expected = new SuperClass(null, 0, 0.);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
 

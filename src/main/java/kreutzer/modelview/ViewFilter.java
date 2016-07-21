@@ -8,9 +8,9 @@ import java.lang.annotation.Annotation;
 
 public final class ViewFilter {
 
-  public static final <T> T filter(final T objectToClone, final Class<? extends View> view) {
+  public static final <T> T filter(final T objectToClone, final Class<? extends View>... filterViews) {
     // find fields that are annotated accordingly
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, view);
+    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, filterViews);
 
     try {
       // create a clone
@@ -29,7 +29,17 @@ public final class ViewFilter {
     }
   }
 
-  public static final <T> List<Field> findAnnotatedFields(final T objectToClone, final Class<? extends View> view) {
+  public static final boolean viewsDoMatch(final Class<? extends View> annotationView, final Class<? extends View>... filterViews) {
+    for (final Class<? extends View> filterView : filterViews) {
+      if (annotationView.isAssignableFrom(filterView)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public static final <T> List<Field> findAnnotatedFields(final T objectToClone, final Class<? extends View>... filterViews) {
     try {
       final List<Field> annotatedFields = new LinkedList<Field>();
 
@@ -43,7 +53,7 @@ public final class ViewFilter {
             // found field that is annotated by @InView(...)
             // check if view classes match
             final Class<? extends View> annotationView = annotation.value();
-            if (annotationView.isAssignableFrom(view)) {
+            if (viewsDoMatch(annotationView, filterViews)) {
               annotatedFields.add(field);
             }
           }
