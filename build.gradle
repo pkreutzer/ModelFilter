@@ -25,6 +25,7 @@ test {
     events 'passed'
     exceptionFormat = 'full'
   }
+  testLogging.showStandardStreams = true
 }
 
 shadowJar {
