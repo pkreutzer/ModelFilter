@@ -7,6 +7,7 @@ import org.junit.*;
 import static org.junit.Assert.*;
 
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
 import java.lang.reflect.Field;
@@ -27,6 +28,11 @@ public final class ModelViewTest {
   public static interface FirstFieldOtherClass extends View {}
   public static interface SecondFieldOtherClass extends View {}
   public static interface AllFieldsOtherClass extends FirstFieldOtherClass, SecondFieldOtherClass {}
+
+  public static interface ContainerList extends View {}
+  public static interface ContainerSet extends View {}
+
+  public static interface AllFieldsCollectionContainer extends ContainerList, ContainerSet {};
 
   public static class SuperClass {
 
@@ -79,7 +85,7 @@ public final class ModelViewTest {
       
       final SuperClass otherSuperClass = (SuperClass)other;
 
-      return ModelViewTest.doStringsMatch(this.publicString, otherSuperClass.publicString)
+      return ModelViewTest.doObjectsMatch(this.publicString, otherSuperClass.publicString)
               && this.publicInt == otherSuperClass.publicInt
               && this.privateDouble == otherSuperClass.privateDouble
               && doOthersMatch(this.superOther, otherSuperClass.superOther);
@@ -163,8 +169,23 @@ public final class ModelViewTest {
 
       final OtherClass otherOtherClass = (OtherClass) other;
 
-      return ModelViewTest.doStringsMatch(this.firstField, otherOtherClass.firstField) &&
-             ModelViewTest.doStringsMatch(this.secondField, otherOtherClass.secondField);
+      return ModelViewTest.doObjectsMatch(this.firstField, otherOtherClass.firstField) &&
+             ModelViewTest.doObjectsMatch(this.secondField, otherOtherClass.secondField);
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 4711;
+
+      if (this.firstField != null) {
+        hash += this.firstField.hashCode();
+      }
+
+      if (this.secondField != null) {
+        hash += this.secondField.hashCode();
+      }
+
+      return hash;
     }
 
     @Override
@@ -174,20 +195,54 @@ public final class ModelViewTest {
 
   }
 
+  public static final class CollectionContainer {
+    @InView(ContainerList.class)
+    public List<OtherClass> list;
+
+    @InView(ContainerSet.class)
+    public Set<OtherClass> set;
+
+    public CollectionContainer() {
+      /* intentionally left blank */
+    }
+
+    public CollectionContainer(final List<OtherClass> list, final Set<OtherClass> set) {
+      this.list = list;
+      this.set = set;
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+      if (!(other instanceof CollectionContainer)) {
+        return false;
+      }
+
+      final CollectionContainer otherCollectionContainer = (CollectionContainer) other;
+
+      return doObjectsMatch(this.list, otherCollectionContainer.list) &&
+             doObjectsMatch(this.set, otherCollectionContainer.set);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("COLLECTION_CONTAINER:{%s, %s}", this.list, this.set);
+    }
+  }
+
 
   // ==================================================================================
   //       H E L P E R   M E T H O D S
   // ==================================================================================
 
 
-  public static final boolean doStringsMatch(final String stringOne, final String stringTwo) {
-    if (stringOne == stringTwo) {
+  public static final boolean doObjectsMatch(final Object objectOne, final Object objectTwo) {
+    if (objectOne == objectTwo) {
       return true;
     }
-    if (stringOne == null) {
+    if (objectOne == null) {
       return false;
     }
-    return stringOne.equals(stringTwo);
+    return objectOne.equals(objectTwo);
   }
 
   @SafeVarargs
@@ -458,6 +513,140 @@ public final class ModelViewTest {
                                       applyTo(objectToClone);
 
     final SuperClass expected = new SuperClass("string", 13, 3., new OtherClass("first", "second"));
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testListIsClonedCorrectlyElementsNotFiltered() {
+    final List<OtherClass> list = new LinkedList<OtherClass>();
+    {
+      list.add(new OtherClass("first1", "second1"));
+      list.add(new OtherClass("first2", "second2"));
+    }
+    final CollectionContainer objectToClone = new CollectionContainer(list, null);
+
+    final CollectionContainer clonedObject = buildFilter().
+                                              forClass(CollectionContainer.class).
+                                              useView(AllFieldsCollectionContainer.class).
+                                              applyTo(objectToClone);
+
+    final CollectionContainer expected = objectToClone;
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testSetIsClonedCorrectlyElementsNotFiltered() {
+    final Set<OtherClass> set = new HashSet<OtherClass>();
+    {
+      set.add(new OtherClass("first1", "second1"));
+      set.add(new OtherClass("first2", "second2"));
+    }
+    final CollectionContainer objectToClone = new CollectionContainer(null, set);
+
+    final CollectionContainer clonedObject = buildFilter().
+                                              forClass(CollectionContainer.class).
+                                              useView(AllFieldsCollectionContainer.class).
+                                              applyTo(objectToClone);
+
+    final CollectionContainer expected = objectToClone;
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testListIsClonedCorrectlyElementsFilteredAll() {
+    final List<OtherClass> list = new LinkedList<OtherClass>();
+    {
+      list.add(new OtherClass("first1", "second1"));
+      list.add(new OtherClass("first2", "second2"));
+    }
+    final CollectionContainer objectToClone = new CollectionContainer(list, null);
+
+    final CollectionContainer clonedObject = buildFilter().
+                                              forClass(CollectionContainer.class).
+                                              useView(AllFieldsCollectionContainer.class).
+                                              forClass(OtherClass.class).
+                                              useView(AllFieldsOtherClass.class).
+                                              applyTo(objectToClone);
+
+    final CollectionContainer expected = objectToClone;
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testSetIsClonedCorrectlyElementsFilteredAll() {
+    final Set<OtherClass> set = new HashSet<OtherClass>();
+    {
+      set.add(new OtherClass("first1", "second1"));
+      set.add(new OtherClass("first2", "second2"));
+    }
+    final CollectionContainer objectToClone = new CollectionContainer(null, set);
+
+    final CollectionContainer clonedObject = buildFilter().
+                                              forClass(CollectionContainer.class).
+                                              useView(AllFieldsCollectionContainer.class).
+                                              forClass(OtherClass.class).
+                                              useView(AllFieldsOtherClass.class).
+                                              applyTo(objectToClone);
+
+    final CollectionContainer expected = objectToClone;
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testListIsClonedCorrectlyElementsFilteredFirstField() {
+    final List<OtherClass> list = new LinkedList<OtherClass>();
+    {
+      list.add(new OtherClass("first1", "second1"));
+      list.add(new OtherClass("first2", "second2"));
+    }
+    final CollectionContainer objectToClone = new CollectionContainer(list, null);
+
+    final CollectionContainer clonedObject = buildFilter().
+                                              forClass(CollectionContainer.class).
+                                              useView(AllFieldsCollectionContainer.class).
+                                              forClass(OtherClass.class).
+                                              useView(FirstFieldOtherClass.class).
+                                              applyTo(objectToClone);
+
+    final List<OtherClass> filteredList = new LinkedList<OtherClass>();
+    {
+      filteredList.add(new OtherClass("first1", null));
+      filteredList.add(new OtherClass("first2", null));
+    }
+
+    final CollectionContainer expected = new CollectionContainer(filteredList, null);
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testSetIsClonedCorrectlyElementsFilteredFirstField() {
+    final Set<OtherClass> set = new HashSet<OtherClass>();
+    {
+      set.add(new OtherClass("first1", "second1"));
+      set.add(new OtherClass("first2", "second2"));
+    }
+    final CollectionContainer objectToClone = new CollectionContainer(null, set);
+
+    final CollectionContainer clonedObject = buildFilter().
+                                              forClass(CollectionContainer.class).
+                                              useView(AllFieldsCollectionContainer.class).
+                                              forClass(OtherClass.class).
+                                              useView(FirstFieldOtherClass.class).
+                                              applyTo(objectToClone);
+
+    final Set<OtherClass> filteredSet = new HashSet<OtherClass>();
+    {
+      filteredSet.add(new OtherClass("first1", null));
+      filteredSet.add(new OtherClass("first2", null));
+    }
+
+    final CollectionContainer expected = new CollectionContainer(null, filteredSet);
 
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }

@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collection;
 
 import java.lang.reflect.Field;
 import java.lang.annotation.Annotation;
@@ -63,33 +64,52 @@ public final class ViewFilter {
 
     final Class<?> theClass = objectToFilter.getClass();
 
-    if (!classShouldBeFiltered(theClass)) {
-      return objectToFilter;
-    }
+    // TODO arrays
 
-    // find fields that have a matching annotation
-    final List<Field> annotatedFields = findAnnotatedFields(objectToFilter, this.views);
+    if (objectToFilter instanceof Collection) {
+      try {
+        final Collection clonedCollection = (Collection) objectToFilter.getClass().getConstructor().newInstance();
 
-    try {
-      // create a clone
-      // TODO unchecked cast...
-      final T clone = (T) objectToFilter.getClass().getConstructor().newInstance();
+        final Collection originalCollection = (Collection) objectToFilter;
+        for (final Object element : originalCollection) {
+          final Object clonedElement = applyTo(element);
+          clonedCollection.add(clonedElement);
+        }
 
-      // iterate over annotated fields and copy values to clone
-      for (final Field field : annotatedFields) {
-        field.setAccessible(true);
-
-        // apply the filter to the object the field is referring to
-        final Object filteredValue = applyTo(field.get(objectToFilter));
-
-        // set field's value in clone
-        field.set(clone, filteredValue);
+        return (T) clonedCollection;
+      } catch (final Throwable throwable) {
+        // unable to clone object
+        throw new CloningFailedException(throwable, objectToFilter);
+      }
+    } else {
+      if (!classShouldBeFiltered(theClass)) {
+        return objectToFilter;
       }
 
-      return clone;
-    } catch (final Throwable throwable) {
-      // unable to clone object
-      throw new CloningFailedException(throwable, objectToFilter);
+      // find fields that have a matching annotation
+      final List<Field> annotatedFields = findAnnotatedFields(objectToFilter, this.views);
+
+      try {
+        // create a clone
+        // TODO do not clone object if it is already filtered correctly
+        final T clone = (T) objectToFilter.getClass().getConstructor().newInstance();
+
+        // iterate over annotated fields and copy values to clone
+        for (final Field field : annotatedFields) {
+          field.setAccessible(true);
+
+          // apply the filter to the object the field is referring to
+          final Object filteredValue = applyTo(field.get(objectToFilter));
+
+          // set field's value in clone
+          field.set(clone, filteredValue);
+        }
+
+        return clone;
+      } catch (final Throwable throwable) {
+        // unable to clone object
+        throw new CloningFailedException(throwable, objectToFilter);
+      }
     }
   }
 
