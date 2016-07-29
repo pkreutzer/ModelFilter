@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Collection;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Array;
 import java.lang.annotation.Annotation;
 
 public final class ViewFilter {
@@ -71,9 +72,29 @@ public final class ViewFilter {
 
     final Class<?> theClass = objectToFilter.getClass();
 
-    // TODO arrays
+    if (theClass.isArray()) {
+      // primitive arrays do not have to be filtered
+      if (theClass.getComponentType().isPrimitive()) {
+        return objectToFilter;
+      }
 
-    if (objectToFilter instanceof Collection) {
+      try {
+        final Object[] originalArray = (Object[]) objectToFilter;
+        final int arrayLength = originalArray.length;
+
+        final Object[] clonedArray = (Object[]) Array.newInstance(theClass.getComponentType(), arrayLength);
+        for (int index = 0; index < arrayLength; ++index) {
+          final Object element = originalArray[index];
+          final Object clonedElement = applyTo(element);
+          clonedArray[index] = clonedElement;
+        }
+
+        return (T) clonedArray;
+      } catch (final Throwable throwable) {
+        // unable to clone array
+        throw new CloningFailedException(throwable, objectToFilter);
+      }
+    } else if (objectToFilter instanceof Collection) {
       try {
         final Collection clonedCollection = (Collection) objectToFilter.getClass().getConstructor().newInstance();
 

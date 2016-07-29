@@ -9,6 +9,7 @@ import static org.junit.Assert.*;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
 import java.lang.reflect.Field;
@@ -34,6 +35,11 @@ public final class ModelViewTest {
   public static interface ContainerSet extends View {}
 
   public static interface AllFieldsCollectionContainer extends ContainerList, ContainerSet {};
+
+  public static interface OneDimensionalArrayContainer extends View {};
+  public static interface TwoDimensionalArrayContainer extends View {};
+  public static interface OneDimensionalPrimitiveArrayContainer extends View {};
+  public static interface TwoDimensionalPrimitiveArrayContainer extends View {};
 
   public static interface Children extends View {}
   public static interface Parent extends View {}
@@ -233,6 +239,57 @@ public final class ModelViewTest {
     @Override
     public String toString() {
       return String.format("COLLECTION_CONTAINER:{%s, %s}", this.list, this.set);
+    }
+  }
+
+  public static final class ArrayContainer {
+    @InView(OneDimensionalArrayContainer.class)
+    public OtherClass[] oneDimensionalArray;
+
+    @InView(TwoDimensionalArrayContainer.class)
+    public OtherClass[][] twoDimensionalArray;
+
+    @InView(OneDimensionalPrimitiveArrayContainer.class)
+    public int[] oneDimensionalPrimitiveArray;
+
+    @InView(TwoDimensionalPrimitiveArrayContainer.class)
+    public int[][] twoDimensionalPrimitiveArray;
+
+    public ArrayContainer() {
+      /* intentionally left blank */
+    }
+
+    public ArrayContainer(final OtherClass[] oneDimensionalArray,
+                          final OtherClass[][] twoDimensionalArray,
+                          final int[] oneDimensionalPrimitiveArray,
+                          final int[][] twoDimensionalPrimitiveArray) {
+      this.oneDimensionalArray = oneDimensionalArray;
+      this.twoDimensionalArray = twoDimensionalArray;
+      this.oneDimensionalPrimitiveArray = oneDimensionalPrimitiveArray;
+      this.twoDimensionalPrimitiveArray = twoDimensionalPrimitiveArray;
+    }
+
+    @Override
+    public final boolean equals(final Object other) {
+      if (!(other instanceof ArrayContainer)) {
+        return false;
+      }
+
+      final ArrayContainer otherArrayContainer = (ArrayContainer) other;
+
+      return Arrays.equals(this.oneDimensionalArray, otherArrayContainer.oneDimensionalArray) &&
+             Arrays.deepEquals(this.twoDimensionalArray, otherArrayContainer.twoDimensionalArray) &&
+             Arrays.equals(this.oneDimensionalPrimitiveArray, otherArrayContainer.oneDimensionalPrimitiveArray) &&
+             Arrays.deepEquals(this.twoDimensionalPrimitiveArray, otherArrayContainer.twoDimensionalPrimitiveArray);
+    }
+
+    @Override
+    public final String toString() {
+      return String.format("ARRAY_CONTAINER:{%s, %s, %s, %s}",
+                           Arrays.toString(this.oneDimensionalArray),
+                           Arrays.deepToString(this.twoDimensionalArray),
+                           Arrays.toString(this.oneDimensionalPrimitiveArray),
+                           Arrays.deepToString(this.twoDimensionalPrimitiveArray));
     }
   }
 
@@ -700,6 +757,100 @@ public final class ModelViewTest {
   }
 
   @Test
+  public final void testOneDimensionalArrayIsClonedCorrectlyElementsFilteredFirstField() {
+    final OtherClass[] array = {
+                                 new OtherClass("first1", "second1"),
+                                 new OtherClass("first2", "second2"),
+                               };
+    final ArrayContainer objectToClone = new ArrayContainer(array, null, null, null);
+
+    final ArrayContainer clonedObject = buildFilter().
+                                          forClass(ArrayContainer.class).
+                                          useView(OneDimensionalArrayContainer.class).
+                                          forClass(OtherClass.class).
+                                          useView(FirstFieldOtherClass.class).
+                                          applyTo(objectToClone);
+
+    final OtherClass[] filteredArray = {
+                                 new OtherClass("first1", null),
+                                 new OtherClass("first2", null),
+                               };
+    final ArrayContainer expected = new ArrayContainer(filteredArray, null, null, null);
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testTwoDimensionalArrayIsClonedCorrectlyElementsFilteredFirstField() {
+    final OtherClass[][] array = {
+                                   new OtherClass[] {
+                                     new OtherClass("first1", "second1"),
+                                     new OtherClass("first2", "second2"),
+                                   },
+                                   null,
+                                   new OtherClass[] {
+                                     new OtherClass("first3", "second3"),
+                                   },
+                                 };
+    final ArrayContainer objectToClone = new ArrayContainer(null, array, null, null);
+
+    final ArrayContainer clonedObject = buildFilter().
+                                          forClass(ArrayContainer.class).
+                                          useView(TwoDimensionalArrayContainer.class).
+                                          forClass(OtherClass.class).
+                                          useView(FirstFieldOtherClass.class).
+                                          applyTo(objectToClone);
+
+    final OtherClass[][] filteredArray = {
+                                   new OtherClass[] {
+                                     new OtherClass("first1", null),
+                                     new OtherClass("first2", null),
+                                   },
+                                   null,
+                                   new OtherClass[] {
+                                     new OtherClass("first3", null),
+                                   },
+                                 };
+    final ArrayContainer expected = new ArrayContainer(null, filteredArray, null, null);
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testOneDimensionalPrimitiveArrayIsClonedCorrectly() {
+    final int[] array = { 13, 3, 1991 };
+    final ArrayContainer objectToClone = new ArrayContainer(null, null, array, null);
+
+    final ArrayContainer clonedObject = buildFilter().
+                                          forClass(ArrayContainer.class).
+                                          useView(OneDimensionalPrimitiveArrayContainer.class).
+                                          applyTo(objectToClone);
+
+    final ArrayContainer expected = new ArrayContainer(null, null, array, null);
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testTwoDimensionalPrimitiveArrayIsClonedCorrectly() {
+    final int[][] array = {
+                            new int[] { 13, 3 },
+                            null,
+                            new int[] { 1991 }
+                          };
+    final ArrayContainer objectToClone = new ArrayContainer(null, null, null, array);
+
+    final ArrayContainer clonedObject = buildFilter().
+                                          forClass(ArrayContainer.class).
+                                          useView(TwoDimensionalPrimitiveArrayContainer.class).
+                                          applyTo(objectToClone);
+
+    final ArrayContainer expected = new ArrayContainer(null, null, null, array);
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
   public final void testSetIsClonedCorrectlyElementsFilteredFirstField() {
     final Set<OtherClass> set = new HashSet<OtherClass>();
     {
@@ -782,5 +933,5 @@ public final class ModelViewTest {
     final DefaultValues expected = new DefaultValues(null, null, 0., 0.);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
-  
+
 }
