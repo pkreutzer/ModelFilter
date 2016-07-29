@@ -10,6 +10,7 @@ import java.util.Collection;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.Annotation;
 
 public final class ViewFilter {
@@ -72,72 +73,86 @@ public final class ViewFilter {
 
     final Class<?> theClass = objectToFilter.getClass();
 
-    if (theClass.isArray()) {
-      // primitive arrays do not have to be filtered
-      if (theClass.getComponentType().isPrimitive()) {
-        return objectToFilter;
-      }
-
-      try {
-        final Object[] originalArray = (Object[]) objectToFilter;
-        final int arrayLength = originalArray.length;
-
-        final Object[] clonedArray = (Object[]) Array.newInstance(theClass.getComponentType(), arrayLength);
-
-        // save cloned array to map so that we can re-use it in case of cycles
-        this.filteredObjects.put(objectToFilter, clonedArray);
-
-        for (int index = 0; index < arrayLength; ++index) {
-          final Object element = originalArray[index];
-          final Object clonedElement = applyTo(element);
-          clonedArray[index] = clonedElement;
+    try {
+      if (theClass.isArray()) {
+        // primitive arrays do not have to be filtered
+        if (theClass.getComponentType().isPrimitive()) {
+          return objectToFilter;
         }
+
+        final Object[] originalArray = (Object[]) objectToFilter;
+        final Object[] clonedArray = cloneArray(originalArray);
 
         return (T) clonedArray;
-      } catch (final Throwable throwable) {
-        // unable to clone array
-        throw new CloningFailedException(throwable, objectToFilter);
-      }
-    } else if (objectToFilter instanceof Collection) {
-      try {
-        final Collection clonedCollection = (Collection) objectToFilter.getClass().getConstructor().newInstance();
-
-        // save cloned object to map so that we can re-use it in case of cycles
-        this.filteredObjects.put(objectToFilter, clonedCollection);
-
+      } else if (objectToFilter instanceof Collection) {
         final Collection originalCollection = (Collection) objectToFilter;
-        for (final Object element : originalCollection) {
-          final Object clonedElement = applyTo(element);
-          clonedCollection.add(clonedElement);
-        }
+        final Collection clonedCollection = cloneCollection(originalCollection);
 
         return (T) clonedCollection;
-      } catch (final Throwable throwable) {
-        // unable to clone object
-        throw new CloningFailedException(throwable, objectToFilter);
-      }
-    } else {
-      if (!classShouldBeFiltered(theClass)) {
-        return objectToFilter;
-      }
+      } else {
+        if (!classShouldBeFiltered(theClass)) {
+          return objectToFilter;
+        }
 
-      try {
-        // create a clone
-        // TODO do not clone object if it is already filtered correctly
-        final T clone = (T) objectToFilter.getClass().getConstructor().newInstance();
-
-        // save cloned object to map so that we can re-use it in case of cycles
-        this.filteredObjects.put(objectToFilter, clone);
-
-        // copy values to clone
-        copyAnnotatedFields(objectToFilter, clone);
-
+        final T clone = filterObject(objectToFilter);
         return clone;
-      } catch (final Throwable throwable) {
-        // unable to clone object
-        throw new CloningFailedException(throwable, objectToFilter);
       }
+    } catch (final Throwable throwable) {
+      // unable to clone object
+      throw new CloningFailedException(throwable, objectToFilter);
     }
+  }
+
+  private final Object[] cloneArray(final Object[] originalArray)
+      throws IllegalAccessException, NoSuchMethodException, InstantiationException, InvocationTargetException {
+    final int arrayLength = originalArray.length;
+
+    final Object[] clonedArray =
+            (Object[]) Array.newInstance(originalArray.getClass().getComponentType(), arrayLength);
+
+    // save cloned array to map so that we can re-use it in case of cycles
+    this.filteredObjects.put(originalArray, clonedArray);
+
+    for (int index = 0; index < arrayLength; ++index) {
+      final Object element = originalArray[index];
+      final Object clonedElement = applyTo(element);
+      clonedArray[index] = clonedElement;
+    }
+
+    return clonedArray;
+  }
+
+  private final Collection cloneCollection(final Collection originalCollection)
+      throws IllegalAccessException, NoSuchMethodException, InstantiationException, InvocationTargetException {
+    @SuppressWarnings("unchecked")
+    final Collection<Object> clonedCollection =
+            (Collection<Object>) originalCollection.getClass().getConstructor().newInstance();
+
+    // save cloned object to map so that we can re-use it in case of cycles
+    this.filteredObjects.put(originalCollection, clonedCollection);
+
+    for (final Object element : originalCollection) {
+      final Object clonedElement = applyTo(element);
+      clonedCollection.add(clonedElement);
+    }
+
+    return clonedCollection;
+  }
+
+  private final <T> T filterObject(final T objectToFilter) 
+      throws IllegalAccessException, NoSuchMethodException, InstantiationException, InvocationTargetException {
+    // create a clone
+    // TODO do not clone object if it is already filtered correctly
+    @SuppressWarnings("unchecked")
+    final T clone = (T) objectToFilter.getClass().getConstructor().newInstance();
+
+    // save cloned object to map so that we can re-use it in case of cycles
+    this.filteredObjects.put(objectToFilter, clone);
+
+    // copy values to clone
+    copyAnnotatedFields(objectToFilter, clone);
+
+    return clone;
   }
 
   public final <T> void copyAnnotatedFields(final T from, final T to) throws IllegalAccessException {
