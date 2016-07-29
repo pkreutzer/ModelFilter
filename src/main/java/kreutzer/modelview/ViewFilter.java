@@ -20,9 +20,12 @@ public final class ViewFilter {
   private final Set<Class<?>> filteredClasses;
   private final Set<Class<? extends View>> views;
 
+  private final Map<Object, Object> filteredObjects;
+
   private ViewFilter() {
     this.filteredClasses = new HashSet<Class<?>>();
     this.views = new HashSet<Class<? extends View>>();
+    this.filteredObjects = new HashMap<Object, Object>();
   }
 
   public static final ViewFilter buildFilter() {
@@ -62,6 +65,10 @@ public final class ViewFilter {
       return null;
     }
 
+    if (this.filteredObjects.containsKey(objectToFilter)) {
+      return (T) this.filteredObjects.get(objectToFilter);
+    }
+
     final Class<?> theClass = objectToFilter.getClass();
 
     // TODO arrays
@@ -69,6 +76,9 @@ public final class ViewFilter {
     if (objectToFilter instanceof Collection) {
       try {
         final Collection clonedCollection = (Collection) objectToFilter.getClass().getConstructor().newInstance();
+
+        // save cloned object to map so that we can re-use it in case of cycles
+        this.filteredObjects.put(objectToFilter, clonedCollection);
 
         final Collection originalCollection = (Collection) objectToFilter;
         for (final Object element : originalCollection) {
@@ -93,6 +103,9 @@ public final class ViewFilter {
         // create a clone
         // TODO do not clone object if it is already filtered correctly
         final T clone = (T) objectToFilter.getClass().getConstructor().newInstance();
+
+        // save cloned object to map so that we can re-use it in case of cycles
+        this.filteredObjects.put(objectToFilter, clone);
 
         // iterate over annotated fields and copy values to clone
         for (final Field field : annotatedFields) {

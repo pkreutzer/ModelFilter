@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.lang.reflect.Field;
@@ -33,6 +34,9 @@ public final class ModelViewTest {
   public static interface ContainerSet extends View {}
 
   public static interface AllFieldsCollectionContainer extends ContainerList, ContainerSet {};
+
+  public static interface Children extends View {}
+  public static interface Parent extends View {}
 
   public static class SuperClass {
 
@@ -226,6 +230,75 @@ public final class ModelViewTest {
     @Override
     public String toString() {
       return String.format("COLLECTION_CONTAINER:{%s, %s}", this.list, this.set);
+    }
+  }
+
+  public static final class CycleClass {
+    @InView(Children.class)
+    public List<CycleClass> children;
+
+    @InView(Parent.class)
+    public CycleClass parent;
+
+    public CycleClass() {
+      /* intentionally left blank */
+    }
+
+    public CycleClass(final List<CycleClass> children, final CycleClass parent) {
+      this.children = children;
+      this.parent = parent;
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+      if (!(other instanceof CycleClass)) {
+        return false;
+      }
+
+      final CycleClass otherCycleClass = (CycleClass) other;
+
+      // do not test parent as this leads to an endless recursion
+      return doObjectsMatch(this.children, otherCycleClass.children);
+    }
+
+    public final boolean parentsCorrect() {
+      if (this.children != null) {
+        for (final CycleClass child : this.children) {
+          if (child.parent != this) {
+            return false;
+          }
+          if (!child.parentsCorrect()) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    }
+
+    @Override
+    public String toString() {
+      final StringBuilder builder = new StringBuilder();
+
+      builder.append("CYCLE_CLASS:{");
+
+      if (this.children != null) {
+        boolean first = true;
+        for (final CycleClass child : this.children) {
+          if (!first) {
+            builder.append(", ");
+          }
+
+          first = false;
+          builder.append(child);
+        }
+      } else {
+        builder.append("null");
+      }
+
+      builder.append("}");
+
+      return builder.toString();
     }
   }
 
@@ -649,6 +722,55 @@ public final class ModelViewTest {
     final CollectionContainer expected = new CollectionContainer(null, filteredSet);
 
     assertEquals("Clone does not match expected object.", expected, clonedObject);
+  }
+
+  @Test
+  public final void testCyclesInObjectGraph() {
+    final CycleClass parent = new CycleClass();
+
+    final CycleClass childOne = new CycleClass(null, parent);
+    final CycleClass childTwo = new CycleClass(null, parent);
+
+    parent.children = new ArrayList<CycleClass>();
+    parent.children.add(childOne);
+    parent.children.add(childTwo);
+
+    assertTrue("References to parents (original) are not correct.", parent.parentsCorrect());
+
+    final CycleClass clonedObject = buildFilter().
+                                      forClass(CycleClass.class).
+                                      useViews(Children.class, Parent.class).
+                                      applyTo(parent);
+
+    final CycleClass expected = parent;
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+    assertTrue("References to parents (cloned) are not correct.", clonedObject.parentsCorrect());
+  }
+
+  @Test
+  public final void testCyclesInObjectGraphNoParents() {
+    final CycleClass parent = new CycleClass();
+
+    final CycleClass childOne = new CycleClass(null, parent);
+    final CycleClass childTwo = new CycleClass(null, parent);
+
+    parent.children = new ArrayList<CycleClass>();
+    parent.children.add(childOne);
+    parent.children.add(childTwo);
+
+    assertTrue("References to parents (original) are not correct.", parent.parentsCorrect());
+
+    final CycleClass clonedObject = buildFilter().
+                                      forClass(CycleClass.class).
+                                      useViews(Children.class).
+                                      applyTo(parent);
+
+    final CycleClass expected = parent;
+
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
+    // we do not include the parent references -> parent references are not correct in clone
+    assertFalse("References to parents (cloned) are not correct.", clonedObject.parentsCorrect());
   }
   
 }
