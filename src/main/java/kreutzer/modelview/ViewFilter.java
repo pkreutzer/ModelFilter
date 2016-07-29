@@ -96,9 +96,6 @@ public final class ViewFilter {
         return objectToFilter;
       }
 
-      // find fields that have a matching annotation
-      final List<Field> annotatedFields = findAnnotatedFields(objectToFilter, this.views);
-
       try {
         // create a clone
         // TODO do not clone object if it is already filtered correctly
@@ -107,21 +104,44 @@ public final class ViewFilter {
         // save cloned object to map so that we can re-use it in case of cycles
         this.filteredObjects.put(objectToFilter, clone);
 
-        // iterate over annotated fields and copy values to clone
-        for (final Field field : annotatedFields) {
-          field.setAccessible(true);
-
-          // apply the filter to the object the field is referring to
-          final Object filteredValue = applyTo(field.get(objectToFilter));
-
-          // set field's value in clone
-          field.set(clone, filteredValue);
-        }
+        // copy values to clone
+        copyAnnotatedFields(objectToFilter, clone);
 
         return clone;
       } catch (final Throwable throwable) {
         // unable to clone object
         throw new CloningFailedException(throwable, objectToFilter);
+      }
+    }
+  }
+
+  public final <T> void copyAnnotatedFields(final T from, final T to) throws IllegalAccessException {
+    for (Class objectClass = from.getClass();
+         !objectClass.equals(Object.class);
+         objectClass = objectClass.getSuperclass()) {
+      // iterate over all fields
+      for (final Field field : objectClass.getDeclaredFields()) {
+        field.setAccessible(true);
+
+        // check if field has @InView annotation and matches view
+        if (isAnnotatedAccordingToViews(field, views)) {
+          // apply the filter to the object the field is referring to
+          final Object filteredValue = applyTo(field.get(from));
+
+          // set field's value in clone
+          field.set(to, filteredValue);
+        } else {
+          // set to default value
+          final Class<?> fieldType = field.getType();
+          if (fieldType.equals(boolean.class)) {
+            field.setBoolean(to, false);
+          } else if (fieldType.isPrimitive()) {
+            // this even works for the other primitive types like long or double
+            field.setByte(to, (byte)(0));
+          } else {
+            field.set(to, null);
+          }
+        }
       }
     }
   }
@@ -148,33 +168,18 @@ public final class ViewFilter {
     return false;
   }
 
-  public static final <T> List<Field> findAnnotatedFields(final T objectToFilter,
+  public static final boolean isAnnotatedAccordingToViews(final Field field,
                                                           final Set<Class<? extends View>> views) {
-    try {
-      final List<Field> annotatedFields = new LinkedList<Field>();
+    final InView annotation = field.getAnnotation(InView.class);
 
-      // iterate over all superclasses
-      for (Class objectClass = objectToFilter.getClass(); !objectClass.equals(Object.class); objectClass = objectClass.getSuperclass()) {
-        // iterate over all fields
-        for (final Field field : objectClass.getDeclaredFields()) {
-          // check if field has @InView annotation
-          final InView annotation = field.getAnnotation(InView.class);
-          if (annotation != null) {
-            // found field that is annotated by @InView(...)
-            // check if view classes match
-            final Class<? extends View> annotationView = annotation.value();
-            if (viewsDoMatch(annotationView, views)) {
-              annotatedFields.add(field);
-            }
-          }
-        }
-      }
-
-      return annotatedFields;
-    } catch (final Throwable throwable) {
-      // unable to find annotated fields
-      throw new CloningFailedException(throwable, objectToFilter);
+    if (annotation == null) {
+      return false;
     }
+
+    // found field that is annotated by @InView(...)
+    // check if view classes match
+    final Class<? extends View> annotationView = annotation.value();
+    return viewsDoMatch(annotationView, views);
   }
 
   // ==================================================================================

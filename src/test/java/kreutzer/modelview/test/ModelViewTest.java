@@ -38,6 +38,9 @@ public final class ModelViewTest {
   public static interface Children extends View {}
   public static interface Parent extends View {}
 
+  public static interface NoFieldsDefaultValues extends View {}
+  public static interface AllFieldsDefaultValues extends View {}
+
   public static class SuperClass {
 
     @InView(PublicString.class)
@@ -302,6 +305,54 @@ public final class ModelViewTest {
     }
   }
 
+  public static final class DefaultValues {
+    @InView(AllFieldsDefaultValues.class)
+    public String stringOne;
+
+    @InView(AllFieldsDefaultValues.class)
+    public String stringTwo = "DEFAULT_VALUE_TWO";
+
+    @InView(AllFieldsDefaultValues.class)
+    public double doubleOne;
+
+    @InView(AllFieldsDefaultValues.class)
+    public double doubleTwo = -13.03;
+
+    public DefaultValues() {
+      this.stringOne = "DEFAULT_VALUE_ONE";
+      this.doubleOne = 13.03;
+    }
+
+    public DefaultValues(final String stringOne, final String stringTwo,
+                         final double doubleOne, final double doubleTwo) {
+      this.stringOne = stringOne;
+      this.stringTwo = stringTwo;
+      this.doubleOne = doubleOne;
+      this.doubleTwo = doubleTwo;
+    }
+
+    @Override
+    public final boolean equals(final Object other) {
+      if (!(other instanceof DefaultValues)) {
+        return false;
+      }
+
+      final DefaultValues otherDefaultValues = (DefaultValues) other;
+
+      return doObjectsMatch(this.stringOne, otherDefaultValues.stringOne) &&
+             doObjectsMatch(this.stringTwo, otherDefaultValues.stringTwo) &&
+             this.doubleOne == otherDefaultValues.doubleOne &&
+             this.doubleTwo == otherDefaultValues.doubleTwo;
+    }
+
+    @Override
+    public final String toString() {
+      return String.format("DEFAULT_VALUES:{%s, %s, %f, %f}",
+                           this.stringOne, this.stringTwo,
+                           this.doubleOne, this.doubleTwo);
+    }
+  }
+
 
   // ==================================================================================
   //       H E L P E R   M E T H O D S
@@ -369,55 +420,6 @@ public final class ModelViewTest {
   public final void testDoNotMatchSuperclass() {
     assertFalse("superclass view matches subclass view",
                 viewsDoMatch(AllFieldsSuperClass.class, asSet(PublicString.class)));
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySuperClassAll() {
-    final SuperClass objectToClone = new SuperClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(AllFieldsSuperClass.class));
-    assertEquals("Number of detected fields does not match.", 4, annotatedFields.size());
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySuperClassPublicString() {
-    final SuperClass objectToClone = new SuperClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(PublicString.class));
-    assertEquals("Number of detected fields does not match.", 1, annotatedFields.size());
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySuperClassPublicInt() {
-    final SuperClass objectToClone = new SuperClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(PublicInt.class));
-    assertEquals("Number of detected fields does not match.", 1, annotatedFields.size());
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySuperClassPrivateDouble() {
-    final SuperClass objectToClone = new SuperClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(PrivateDouble.class));
-    assertEquals("Number of detected fields does not match.", 1, annotatedFields.size());
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySubClassAll() {
-    final SubClass objectToClone = new SubClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(AllFieldsSubClass.class));
-    assertEquals("Number of detected fields does not match.", 6, annotatedFields.size());
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySubClassSuperClassFields() {
-    final SubClass objectToClone = new SubClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(AllFieldsSuperClass.class));
-    assertEquals("Number of detected fields does not match.", 4, annotatedFields.size());
-  }
-
-  @Test
-  public final void testAnnotatedFieldsAreDetectedCorrectlySubClassPublicFloat() {
-    final SubClass objectToClone = new SubClass();
-    final List<Field> annotatedFields = findAnnotatedFields(objectToClone, asSet(PublicFloat.class));
-    assertEquals("Number of detected fields does not match.", 1, annotatedFields.size());
   }
 
   @Test
@@ -771,6 +773,14 @@ public final class ModelViewTest {
     assertEquals("Clone does not match expected object.", expected, clonedObject);
     // we do not include the parent references -> parent references are not correct in clone
     assertFalse("References to parents (cloned) are not correct.", clonedObject.parentsCorrect());
+  }
+
+  @Test
+  public final void testDefaultValues() {
+    final DefaultValues objectToClone = new DefaultValues();
+    final DefaultValues clonedObject = filter(objectToClone, NoFieldsDefaultValues.class);
+    final DefaultValues expected = new DefaultValues(null, null, 0., 0.);
+    assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
   
 }
