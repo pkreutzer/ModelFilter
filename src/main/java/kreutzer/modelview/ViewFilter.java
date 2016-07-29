@@ -83,6 +83,10 @@ public final class ViewFilter {
         final int arrayLength = originalArray.length;
 
         final Object[] clonedArray = (Object[]) Array.newInstance(theClass.getComponentType(), arrayLength);
+
+        // save cloned array to map so that we can re-use it in case of cycles
+        this.filteredObjects.put(objectToFilter, clonedArray);
+
         for (int index = 0; index < arrayLength; ++index) {
           final Object element = originalArray[index];
           final Object clonedElement = applyTo(element);
