@@ -1,4 +1,4 @@
-package kreutzer.modelview;
+package kreutzer.modelfilter;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

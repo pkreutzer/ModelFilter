@@ -1,7 +1,7 @@
-package kreutzer.modelview.test;
+package kreutzer.modelfilter.test;
 
-import kreutzer.modelview.*;
-import static kreutzer.modelview.ViewFilter.*;
+import kreutzer.modelfilter.*;
+import static kreutzer.modelfilter.ModelFilter.*;
 
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.lang.reflect.Field;
 
-public final class ModelViewTest {
+public final class ModelFilterTest {
 
   public static interface PublicString extends View {}
   public static interface PublicInt extends View {}
@@ -81,15 +81,6 @@ public final class ModelViewTest {
       this.privateDouble = privateDouble;
     }
 
-    protected final boolean doOthersMatch(final OtherClass otherOne, final OtherClass otherTwo) {
-      if (otherOne == null && otherTwo == null) {
-        return true;
-      } else if (otherOne == null) {
-        return false;
-      }
-      return otherOne.equals(otherTwo);
-    }
-
     @Override
     public boolean equals(final Object other) {
       if (!(other instanceof SuperClass)) {
@@ -98,10 +89,10 @@ public final class ModelViewTest {
       
       final SuperClass otherSuperClass = (SuperClass)other;
 
-      return ModelViewTest.doObjectsMatch(this.publicString, otherSuperClass.publicString)
+      return ModelFilterTest.doObjectsMatch(this.publicString, otherSuperClass.publicString)
               && this.publicInt == otherSuperClass.publicInt
               && this.privateDouble == otherSuperClass.privateDouble
-              && doOthersMatch(this.superOther, otherSuperClass.superOther);
+              && ModelFilterTest.doObjectsMatch(this.superOther, otherSuperClass.superOther);
     }
 
     @Override
@@ -147,7 +138,7 @@ public final class ModelViewTest {
 
       return super.equals(other)
               && this.publicFloat == otherSubClass.publicFloat
-              && super.doOthersMatch(this.subOther, otherSubClass.subOther);
+              && ModelFilterTest.doObjectsMatch(this.subOther, otherSubClass.subOther);
     }
 
     @Override
@@ -182,8 +173,8 @@ public final class ModelViewTest {
 
       final OtherClass otherOtherClass = (OtherClass) other;
 
-      return ModelViewTest.doObjectsMatch(this.firstField, otherOtherClass.firstField) &&
-             ModelViewTest.doObjectsMatch(this.secondField, otherOtherClass.secondField);
+      return ModelFilterTest.doObjectsMatch(this.firstField, otherOtherClass.firstField) &&
+             ModelFilterTest.doObjectsMatch(this.secondField, otherOtherClass.secondField);
     }
 
     @Override
@@ -232,8 +223,8 @@ public final class ModelViewTest {
 
       final CollectionContainer otherCollectionContainer = (CollectionContainer) other;
 
-      return doObjectsMatch(this.list, otherCollectionContainer.list) &&
-             doObjectsMatch(this.set, otherCollectionContainer.set);
+      return ModelFilterTest.doObjectsMatch(this.list, otherCollectionContainer.list) &&
+             ModelFilterTest.doObjectsMatch(this.set, otherCollectionContainer.set);
     }
 
     @Override
@@ -318,7 +309,7 @@ public final class ModelViewTest {
       final CycleClass otherCycleClass = (CycleClass) other;
 
       // do not test parent as this leads to an endless recursion
-      return doObjectsMatch(this.children, otherCycleClass.children);
+      return ModelFilterTest.doObjectsMatch(this.children, otherCycleClass.children);
     }
 
     public final boolean parentsCorrect() {
@@ -396,8 +387,8 @@ public final class ModelViewTest {
 
       final DefaultValues otherDefaultValues = (DefaultValues) other;
 
-      return doObjectsMatch(this.stringOne, otherDefaultValues.stringOne) &&
-             doObjectsMatch(this.stringTwo, otherDefaultValues.stringTwo) &&
+      return ModelFilterTest.doObjectsMatch(this.stringOne, otherDefaultValues.stringOne) &&
+             ModelFilterTest.doObjectsMatch(this.stringTwo, otherDefaultValues.stringTwo) &&
              this.doubleOne == otherDefaultValues.doubleOne &&
              this.doubleTwo == otherDefaultValues.doubleTwo;
     }

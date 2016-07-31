@@ -1,4 +1,4 @@
-package kreutzer.modelview;
+package kreutzer.modelfilter;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -13,7 +13,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.Annotation;
 
-public final class ViewFilter {
+public final class ModelFilter {
 
   // ==================================================================================
   //       F L U E N T   I N T E R F A C E
@@ -24,22 +24,22 @@ public final class ViewFilter {
 
   private final Map<Object, Object> filteredObjects;
 
-  private ViewFilter() {
+  private ModelFilter() {
     this.filteredClasses = new HashSet<Class<?>>();
     this.views = new HashSet<Class<? extends View>>();
     this.filteredObjects = new HashMap<Object, Object>();
   }
 
-  public static final ViewFilter buildFilter() {
-    return new ViewFilter();
+  public static final ModelFilter buildFilter() {
+    return new ModelFilter();
   }
 
-  public final ViewFilter forClass(final Class<?> filteredClass) {
+  public final ModelFilter forClass(final Class<?> filteredClass) {
     this.filteredClasses.add(filteredClass);
     return this;
   }
 
-  public final ViewFilter forClasses(final Class<?>... filteredClasses) {
+  public final ModelFilter forClasses(final Class<?>... filteredClasses) {
     for (final Class<?> filteredClass : filteredClasses) {
       this.filteredClasses.add(filteredClass);
     }
@@ -47,13 +47,13 @@ public final class ViewFilter {
     return this;
   }
 
-  public final ViewFilter useView(final Class<? extends View> view) {
+  public final ModelFilter useView(final Class<? extends View> view) {
     this.views.add(view);
     return this;
   }
 
   @SafeVarargs
-  public final ViewFilter useViews(final Class<? extends View>... views) {
+  public final ModelFilter useViews(final Class<? extends View>... views) {
     for (final Class<? extends View> view : views) {
       this.views.add(view);
     }
@@ -232,15 +232,15 @@ public final class ViewFilter {
       return null;
     }
 
-    final ViewFilter viewFilter = buildFilter();
+    final ModelFilter modelFilter = buildFilter();
     final Class<?> theClass = objectToFilter.getClass();
 
-    viewFilter.forClass(theClass);
+    modelFilter.forClass(theClass);
     for (final Class<? extends View> view : views) {
-      viewFilter.useView(view);
+      modelFilter.useView(view);
     }
 
-    return viewFilter.applyTo(objectToFilter);
+    return modelFilter.applyTo(objectToFilter);
   }
 
 }
