@@ -1,6 +1,6 @@
-package kreutzer.modelfilter.example;
+package pkreutzer.modelfilter.example;
 
-import static kreutzer.modelfilter.ModelFilter.*;
+import static pkreutzer.modelfilter.ModelFilter.*;
 
 public final class ModelFilterExample {
 

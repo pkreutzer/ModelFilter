@@ -1,6 +1,6 @@
-package kreutzer.modelfilter.example;
+package pkreutzer.modelfilter.example;
 
-import kreutzer.modelfilter.View;
+import pkreutzer.modelfilter.View;
 
 public final class UserView {
 

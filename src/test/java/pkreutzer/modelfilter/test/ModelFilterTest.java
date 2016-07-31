@@ -1,7 +1,7 @@
-package kreutzer.modelfilter.test;
+package pkreutzer.modelfilter.test;
 
-import kreutzer.modelfilter.*;
-import static kreutzer.modelfilter.ModelFilter.*;
+import pkreutzer.modelfilter.*;
+import static pkreutzer.modelfilter.ModelFilter.*;
 
 import org.junit.*;
 import static org.junit.Assert.*;

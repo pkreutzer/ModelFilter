@@ -1,4 +1,4 @@
-package kreutzer.modelfilter;
+package pkreutzer.modelfilter;
 
 import java.util.List;
 import java.util.LinkedList;
