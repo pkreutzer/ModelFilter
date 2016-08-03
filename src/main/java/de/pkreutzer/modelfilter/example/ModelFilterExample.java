@@ -1,6 +1,8 @@
-package pkreutzer.modelfilter.example;
+package de.pkreutzer.modelfilter.example;
 
-import static pkreutzer.modelfilter.ModelFilter.*;
+import de.pkreutzer.modelfilter.ModelFilter;
+
+import static de.pkreutzer.modelfilter.ModelFilter.*;
 
 public final class ModelFilterExample {
 
@@ -11,7 +13,7 @@ public final class ModelFilterExample {
     final User userPublic = filter(user, UserView.Public.class);
 
     // fluent interface
-    final User userCredentials = buildFilter().
+    final User userCredentials = ModelFilter.buildFilter().
                                     forClass(User.class).
                                     useView(UserView.Credentials.class).
                                     applyTo(user);

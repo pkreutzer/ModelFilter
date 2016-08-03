@@ -1,7 +1,5 @@
-package pkreutzer.modelfilter;
+package de.pkreutzer.modelfilter;
 
-import java.util.List;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,7 +9,6 @@ import java.util.Collection;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.annotation.Annotation;
 
 public final class ModelFilter {
 

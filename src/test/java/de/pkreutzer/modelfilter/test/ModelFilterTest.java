@@ -1,7 +1,9 @@
-package pkreutzer.modelfilter.test;
+package de.pkreutzer.modelfilter.test;
 
+import de.pkreutzer.modelfilter.InView;
+import de.pkreutzer.modelfilter.ModelFilter;
+import de.pkreutzer.modelfilter.View;
 import pkreutzer.modelfilter.*;
-import static pkreutzer.modelfilter.ModelFilter.*;
 
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -12,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
-import java.lang.reflect.Field;
 
 public final class ModelFilterTest {
 
@@ -437,43 +438,43 @@ public final class ModelFilterTest {
   @Test
   public final void testDoMatchSame() {
     assertTrue("same views do not match",
-               viewsDoMatch(PublicString.class, asSet(PublicString.class)));
+               ModelFilter.viewsDoMatch(PublicString.class, asSet(PublicString.class)));
   }
 
   @Test
   public final void testDoMatchSameAndOther() {
     assertTrue("same views (and other) do not match",
-               viewsDoMatch(PublicString.class, asSet(PublicString.class, PublicFloat.class)));
+               ModelFilter.viewsDoMatch(PublicString.class, asSet(PublicString.class, PublicFloat.class)));
   }
 
   @Test
   public final void testDoMatchSameAndOtherDifferentOrder() {
     assertTrue("same views (and other, different order) do not match",
-               viewsDoMatch(PublicString.class, asSet(PublicFloat.class, PublicString.class)));
+               ModelFilter.viewsDoMatch(PublicString.class, asSet(PublicFloat.class, PublicString.class)));
   }
 
   @Test
   public final void testDoMatchSubclass() {
     assertTrue("subclass view does not match superclass view",
-               viewsDoMatch(PublicString.class, asSet(AllFieldsSuperClass.class)));
+               ModelFilter.viewsDoMatch(PublicString.class, asSet(AllFieldsSuperClass.class)));
   }
 
   @Test
   public final void testDoNotMatchOther() {
     assertFalse("superclass view matches subclass view",
-                viewsDoMatch(PublicString.class, asSet(PublicFloat.class)));
+                ModelFilter.viewsDoMatch(PublicString.class, asSet(PublicFloat.class)));
   }
 
   @Test
   public final void testDoNotMatchSuperclass() {
     assertFalse("superclass view matches subclass view",
-                viewsDoMatch(AllFieldsSuperClass.class, asSet(PublicString.class)));
+                ModelFilter.viewsDoMatch(AllFieldsSuperClass.class, asSet(PublicString.class)));
   }
 
   @Test
   public final void testObjectIsClonedCorrectlySuperClassAll() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, AllFieldsSuperClass.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, AllFieldsSuperClass.class);
     final SuperClass expected = objectToClone;
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -481,7 +482,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlyMultiple() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, PublicString.class, PrivateDouble.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, PublicString.class, PrivateDouble.class);
     final SuperClass expected = new SuperClass("string", 0, 3., null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -489,7 +490,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlyMultipleAndOther() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, PublicString.class, PrivateDouble.class, PublicFloat.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, PublicString.class, PrivateDouble.class, PublicFloat.class);
     final SuperClass expected = new SuperClass("string", 0, 3., null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -497,7 +498,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlyNoMatches() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, PublicFloat.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, PublicFloat.class);
     final SuperClass expected = new SuperClass(null, 0, 0., null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -505,7 +506,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlySuperClassPublicString() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, PublicString.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, PublicString.class);
     final SuperClass expected = new SuperClass("string", 0, 0., null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -513,7 +514,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlySuperClassPublicInt() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, PublicInt.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, PublicInt.class);
     final SuperClass expected = new SuperClass(null, 13, 0., null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -521,7 +522,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlySuperClassPrivateDouble() {
     final SuperClass objectToClone = new SuperClass("string", 13, 3., null);
-    final SuperClass clonedObject = filter(objectToClone, PrivateDouble.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, PrivateDouble.class);
     final SuperClass expected = new SuperClass(null, 0, 3., null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -529,7 +530,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlySubClassAll() {
     final SubClass objectToClone = new SubClass("string", 13, 3., null, 1991.f, null);
-    final SubClass clonedObject = filter(objectToClone, AllFieldsSubClass.class);
+    final SubClass clonedObject = ModelFilter.filter(objectToClone, AllFieldsSubClass.class);
     final SubClass expected = objectToClone;
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -537,7 +538,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlySubClassSuperClassFields() {
     final SubClass objectToClone = new SubClass("string", 13, 3., null, 1991.f, null);
-    final SubClass clonedObject = filter(objectToClone, AllFieldsSuperClass.class);
+    final SubClass clonedObject = ModelFilter.filter(objectToClone, AllFieldsSuperClass.class);
     final SubClass expected = new SubClass("string", 13, 3., null, 0.f, null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -545,7 +546,7 @@ public final class ModelFilterTest {
   @Test
   public final void testObjectIsClonedCorrectlySubClassPublicFloat() {
     final SubClass objectToClone = new SubClass("string", 13, 3., null, 1991.f, null);
-    final SubClass clonedObject = filter(objectToClone, PublicFloat.class);
+    final SubClass clonedObject = ModelFilter.filter(objectToClone, PublicFloat.class);
     final SubClass expected = new SubClass(null, 0, 0., null, 1991.f, null);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -554,7 +555,7 @@ public final class ModelFilterTest {
   public final void testObjectIsClonedCorrectlySuperClassAllOtherNotFiltered() {
     final OtherClass otherClass = new OtherClass("first", "second");
     final SuperClass objectToClone = new SuperClass("string", 13, 3., otherClass);
-    final SuperClass clonedObject = filter(objectToClone, AllFieldsSuperClass.class);
+    final SuperClass clonedObject = ModelFilter.filter(objectToClone, AllFieldsSuperClass.class);
     final SuperClass expected = objectToClone;
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
@@ -564,7 +565,7 @@ public final class ModelFilterTest {
     final OtherClass otherClass = new OtherClass("first", "second");
     final SuperClass objectToClone = new SuperClass("string", 13, 3., otherClass);
 
-    final SuperClass clonedObject = buildFilter().
+    final SuperClass clonedObject = ModelFilter.buildFilter().
                                       forClass(SuperClass.class).
                                       useView(AllFieldsSuperClass.class).
                                       applyTo(objectToClone);
@@ -579,7 +580,7 @@ public final class ModelFilterTest {
     final OtherClass otherClass = new OtherClass("first", "second");
     final SuperClass objectToClone = new SuperClass("string", 13, 3., otherClass);
 
-    final SuperClass clonedObject = buildFilter().
+    final SuperClass clonedObject = ModelFilter.buildFilter().
                                       forClasses(SuperClass.class, OtherClass.class).
                                       useView(AllFieldsSuperClass.class).
                                       applyTo(objectToClone);
@@ -594,7 +595,7 @@ public final class ModelFilterTest {
     final OtherClass otherClass = new OtherClass("first", "second");
     final SuperClass objectToClone = new SuperClass("string", 13, 3., otherClass);
 
-    final SuperClass clonedObject = buildFilter().
+    final SuperClass clonedObject = ModelFilter.buildFilter().
                                       forClass(SuperClass.class).
                                       useView(AllFieldsSuperClass.class).
                                       forClass(OtherClass.class).
@@ -611,7 +612,7 @@ public final class ModelFilterTest {
     final OtherClass otherClass = new OtherClass("first", "second");
     final SuperClass objectToClone = new SuperClass("string", 13, 3., otherClass);
 
-    final SuperClass clonedObject = buildFilter().
+    final SuperClass clonedObject = ModelFilter.buildFilter().
                                       forClass(SuperClass.class).
                                       useView(AllFieldsSuperClass.class).
                                       forClass(OtherClass.class).
@@ -628,7 +629,7 @@ public final class ModelFilterTest {
     final OtherClass otherClass = new OtherClass("first", "second");
     final SuperClass objectToClone = new SuperClass("string", 13, 3., otherClass);
 
-    final SuperClass clonedObject = buildFilter().
+    final SuperClass clonedObject = ModelFilter.buildFilter().
                                       forClass(SuperClass.class).
                                       useView(AllFieldsSuperClass.class).
                                       forClass(OtherClass.class).
@@ -649,7 +650,7 @@ public final class ModelFilterTest {
     }
     final CollectionContainer objectToClone = new CollectionContainer(list, null);
 
-    final CollectionContainer clonedObject = buildFilter().
+    final CollectionContainer clonedObject = ModelFilter.buildFilter().
                                               forClass(CollectionContainer.class).
                                               useView(AllFieldsCollectionContainer.class).
                                               applyTo(objectToClone);
@@ -668,7 +669,7 @@ public final class ModelFilterTest {
     }
     final CollectionContainer objectToClone = new CollectionContainer(null, set);
 
-    final CollectionContainer clonedObject = buildFilter().
+    final CollectionContainer clonedObject = ModelFilter.buildFilter().
                                               forClass(CollectionContainer.class).
                                               useView(AllFieldsCollectionContainer.class).
                                               applyTo(objectToClone);
@@ -687,7 +688,7 @@ public final class ModelFilterTest {
     }
     final CollectionContainer objectToClone = new CollectionContainer(list, null);
 
-    final CollectionContainer clonedObject = buildFilter().
+    final CollectionContainer clonedObject = ModelFilter.buildFilter().
                                               forClass(CollectionContainer.class).
                                               useView(AllFieldsCollectionContainer.class).
                                               forClass(OtherClass.class).
@@ -708,7 +709,7 @@ public final class ModelFilterTest {
     }
     final CollectionContainer objectToClone = new CollectionContainer(null, set);
 
-    final CollectionContainer clonedObject = buildFilter().
+    final CollectionContainer clonedObject = ModelFilter.buildFilter().
                                               forClass(CollectionContainer.class).
                                               useView(AllFieldsCollectionContainer.class).
                                               forClass(OtherClass.class).
@@ -729,7 +730,7 @@ public final class ModelFilterTest {
     }
     final CollectionContainer objectToClone = new CollectionContainer(list, null);
 
-    final CollectionContainer clonedObject = buildFilter().
+    final CollectionContainer clonedObject = ModelFilter.buildFilter().
                                               forClass(CollectionContainer.class).
                                               useView(AllFieldsCollectionContainer.class).
                                               forClass(OtherClass.class).
@@ -755,7 +756,7 @@ public final class ModelFilterTest {
                                };
     final ArrayContainer objectToClone = new ArrayContainer(array, null, null, null);
 
-    final ArrayContainer clonedObject = buildFilter().
+    final ArrayContainer clonedObject = ModelFilter.buildFilter().
                                           forClass(ArrayContainer.class).
                                           useView(OneDimensionalArrayContainer.class).
                                           forClass(OtherClass.class).
@@ -785,7 +786,7 @@ public final class ModelFilterTest {
                                  };
     final ArrayContainer objectToClone = new ArrayContainer(null, array, null, null);
 
-    final ArrayContainer clonedObject = buildFilter().
+    final ArrayContainer clonedObject = ModelFilter.buildFilter().
                                           forClass(ArrayContainer.class).
                                           useView(TwoDimensionalArrayContainer.class).
                                           forClass(OtherClass.class).
@@ -812,7 +813,7 @@ public final class ModelFilterTest {
     final int[] array = { 13, 3, 1991 };
     final ArrayContainer objectToClone = new ArrayContainer(null, null, array, null);
 
-    final ArrayContainer clonedObject = buildFilter().
+    final ArrayContainer clonedObject = ModelFilter.buildFilter().
                                           forClass(ArrayContainer.class).
                                           useView(OneDimensionalPrimitiveArrayContainer.class).
                                           applyTo(objectToClone);
@@ -831,7 +832,7 @@ public final class ModelFilterTest {
                           };
     final ArrayContainer objectToClone = new ArrayContainer(null, null, null, array);
 
-    final ArrayContainer clonedObject = buildFilter().
+    final ArrayContainer clonedObject = ModelFilter.buildFilter().
                                           forClass(ArrayContainer.class).
                                           useView(TwoDimensionalPrimitiveArrayContainer.class).
                                           applyTo(objectToClone);
@@ -850,7 +851,7 @@ public final class ModelFilterTest {
     }
     final CollectionContainer objectToClone = new CollectionContainer(null, set);
 
-    final CollectionContainer clonedObject = buildFilter().
+    final CollectionContainer clonedObject = ModelFilter.buildFilter().
                                               forClass(CollectionContainer.class).
                                               useView(AllFieldsCollectionContainer.class).
                                               forClass(OtherClass.class).
@@ -881,7 +882,7 @@ public final class ModelFilterTest {
 
     assertTrue("References to parents (original) are not correct.", parent.parentsCorrect());
 
-    final CycleClass clonedObject = buildFilter().
+    final CycleClass clonedObject = ModelFilter.buildFilter().
                                       forClass(CycleClass.class).
                                       useViews(Children.class, Parent.class).
                                       applyTo(parent);
@@ -905,7 +906,7 @@ public final class ModelFilterTest {
 
     assertTrue("References to parents (original) are not correct.", parent.parentsCorrect());
 
-    final CycleClass clonedObject = buildFilter().
+    final CycleClass clonedObject = ModelFilter.buildFilter().
                                       forClass(CycleClass.class).
                                       useViews(Children.class).
                                       applyTo(parent);
@@ -920,7 +921,7 @@ public final class ModelFilterTest {
   @Test
   public final void testDefaultValues() {
     final DefaultValues objectToClone = new DefaultValues();
-    final DefaultValues clonedObject = filter(objectToClone, NoFieldsDefaultValues.class);
+    final DefaultValues clonedObject = ModelFilter.filter(objectToClone, NoFieldsDefaultValues.class);
     final DefaultValues expected = new DefaultValues(null, null, 0., 0.);
     assertEquals("Clone does not match expected object.", expected, clonedObject);
   }
