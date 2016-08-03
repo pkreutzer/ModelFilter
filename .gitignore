@@ -54,6 +54,12 @@ gradle-app.setting
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/copyright/profiles_settings.xml
+.idea/.name
+.idea/compiler.xml
+.idea/encodings.xml
 
 # Sensitive or high-churn files:
 .idea/dataSources.ids
@@ -93,7 +99,7 @@ fabric.properties
 ### Intellij Patch ###
 # Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
 
-# *.iml
+*.iml
 # modules.xml
 # .idea/misc.xml 
 # *.ipr
