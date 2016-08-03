@@ -1,5 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'maven-publish'
+apply plugin: 'maven-publish-auth' //use Nexus credentials from ~/.m2/settings.xml
 
 version = '0.1'
 
@@ -9,6 +11,7 @@ buildscript {
   }
   dependencies {
     classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+     classpath 'org.hibernate.build.gradle:gradle-maven-publish-auth:2.0.1'
   }
 }
 
@@ -29,7 +32,7 @@ test {
 }
 
 shadowJar {
-  baseName = "modelFilter"
+  baseName = "model-filter"
   mergeServiceFiles()
   manifest {
     attributes \
@@ -47,4 +50,26 @@ compileJava {
 compileTestJava {
     options.encoding = 'UTF-8'
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      from components.java
+
+      groupId 'de.pkreutzer'
+      artifactId 'model-filter'
+      version version
+
+    }
+  }
+}
+
+publishing {
+  repositories {
+    maven {
+      name = 'releases'
+      url "http://mad.cs.fau.de:8081/content/repositories/releases/"
+    }
+  }
 }
