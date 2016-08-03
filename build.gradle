@@ -5,6 +5,8 @@ apply plugin: 'maven-publish-auth' //use Nexus credentials from ~/.m2/settings.x
 
 version = '0.1'
 
+def jarName = 'modelfilter'
+
 buildscript {
   repositories {
     jcenter()
@@ -32,7 +34,7 @@ test {
 }
 
 shadowJar {
-  baseName = "model-filter"
+  baseName = jarName
   mergeServiceFiles()
   manifest {
     attributes \
@@ -58,7 +60,7 @@ publishing {
       from components.java
 
       groupId 'de.pkreutzer'
-      artifactId 'model-filter'
+      artifactId jarName
       version version
 
     }
