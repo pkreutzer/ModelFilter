@@ -1,4 +1,4 @@
-package pkreutzer.modelfilter;
+package de.pkreutzer.modelfilter;
 
 public final class CloningFailedException extends RuntimeException {
 
